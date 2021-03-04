@@ -5,15 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
-using System.Configuration;
-using System;
-using System.Text;
-using System.Web;
-using System.IO;
-using System.Web.Script.Serialization;
-using Microsoft.Graph;
-using System.Net.Http.Headers;
-using System.Collections.Generic;
 
 namespace CreateTicketHttp
 {
@@ -75,7 +66,7 @@ namespace CreateTicketHttp
             log.Info(Option);
             log.Info(UserText);
 
-            return Task.FromResult<object>("something");
+            return Task.FromResult<object>(null);
             
            
         }

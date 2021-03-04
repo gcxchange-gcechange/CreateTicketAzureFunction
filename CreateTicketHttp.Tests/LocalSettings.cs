@@ -17,7 +17,7 @@ namespace CreateTicketHttp.Tests
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
-            string basePath = Path.GetFullPath(@"..\..\..\UpdateUserHttp");
+            string basePath = Path.GetFullPath(@"..\..\..\CreateTicketHttp");
             try
             {
                 var settings = JsonConvert.DeserializeObject<LocalSettings>(
