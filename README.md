@@ -10,10 +10,16 @@ The data you need for the project are:
 
 |Parameter|Type|
 |---|---|
-|userName|string|
-|userEmail|string|
-|Options|string|
-|userText|string
+|email|string|
+|reasonOneVal|string|
+|ticketDescription|string|
+|reasonTwoVal|string
+|pageURL|string
+|startDate|string
+|endDate|string
+|emailTo|string
+|isOngoing|string
+|attachment|files
 
 ### Installation of the project with Visual Studio
 
@@ -28,10 +34,16 @@ Cette application permet de créer des billets dans freshdesk en utilisant l'API
 Les données nécessaire au projets sont:
 |Paramètre|Type|
 |---|---|
-|userName|chaîne de caractères|
-|userEmail|chaîne de caractères|
-|Options|chaîne de caractères|
-|userText|chaîne de caractères|
+|email|chaîne de caractères|
+|reasonOneVal|chaîne de caractères|
+|ticketDescription|chaîne de caractères|
+|reasonTwoVal|chaîne de caractères
+|pageURL|chaîne de caractères
+|startDate|chaîne de caractères
+|endDate|chaîne de caractères
+|emailTo|chaîne de caractères
+|isOngoing|chaîne de caractères
+|attachment|fichiers
 
 ### Installer le project dans Visual Studio
 
