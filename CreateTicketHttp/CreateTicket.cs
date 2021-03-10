@@ -49,14 +49,6 @@ namespace CreateTicketHttp
             o.Write(b, 0, b.Length);
         }
 
-        private static void WriteInt(Stream o, int data)
-        {
-            byte[] b = BitConverter.GetBytes(data);
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(b);
-            o.Write(b, 0, b.Length);
-        }
-
         private class FormItem
         {
             public FormItem() { }
@@ -228,11 +220,10 @@ namespace CreateTicketHttp
                WriteCRLF(rs);
                
                // Product ID:
-               /*
                WriteBoundaryBytes(rs, boundary, false);
                WriteContentDispositionFormDataHeader(rs, "product_id");
-               WriteInt(rs, productID);
-               WriteCRLF(rs);*/
+               WriteString(rs, productID);
+               WriteCRLF(rs);
 
                // Status:
                WriteBoundaryBytes(rs, boundary, false);
