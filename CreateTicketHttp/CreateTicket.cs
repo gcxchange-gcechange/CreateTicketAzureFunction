@@ -111,6 +111,7 @@ namespace CreateTicketHttp
                 }
             }
 
+            // See what fields have been passed to function
             if (formItems.ContainsKey("email"))
             {
                 email = formItems["email"].value;
@@ -148,6 +149,7 @@ namespace CreateTicketHttp
                 isOngoing = formItems["isOngoing"].value;
             }
 
+            // Treat attachments differently
             var attachmentName = new Dictionary<string, string>();
             var attachmentType = new Dictionary<string, string>();
             var attachmentData = new Dictionary<string, byte[]>();
@@ -162,7 +164,7 @@ namespace CreateTicketHttp
                 }
             }
 
-            // Check if userEmail is passed
+            // Check if email is passed
             // return BadRequest if not present
             if (email != null)
             {
@@ -184,7 +186,7 @@ namespace CreateTicketHttp
         public static Task<object> CreateTicketAPI(TraceWriter log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate,
             string endDate, string sendReportTo, string isOngoing, Dictionary<string, string> attachmentName, Dictionary<string, string> attachmentType, Dictionary<string, byte[]> attachmentData)
         {
-            
+            // Load secret information
             string fdDomain = ConfigurationManager.AppSettings["DOMAIN"];
             string APIKey = ConfigurationManager.AppSettings["API_KEY"];
             string productID = ConfigurationManager.AppSettings["API_KEY"];
