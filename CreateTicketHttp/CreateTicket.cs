@@ -94,7 +94,6 @@ namespace CreateTicketHttp
                 formItem.mediaType = contentPart.Headers.ContentType == null ? "" : String.IsNullOrEmpty(contentPart.Headers.ContentType.MediaType) ? "" : contentPart.Headers.ContentType.MediaType;
                 if(formItem.name == "attachment")
                 {
-                    log.Info("file count ------" + formItem.name + fileCount);
                     attachments.Add(String.Concat(formItem.name, fileCount.ToString()), formItem);
                     fileCount++;
                 } else
@@ -181,7 +180,6 @@ namespace CreateTicketHttp
             // Load secret information
             string fdDomain = ConfigurationManager.AppSettings["DOMAIN"];
             string APIKey = ConfigurationManager.AppSettings["API_KEY"];
-            string productID = ConfigurationManager.AppSettings["API_KEY"];
 
             string path = "/api/v2/tickets";
             string url = "https://" + fdDomain + ".freshdesk.com" + path;
@@ -216,13 +214,7 @@ namespace CreateTicketHttp
                // Subject:
                WriteBoundaryBytes(rs, boundary, false);
                WriteContentDispositionFormDataHeader(rs, "subject");
-               WriteString(rs, "Test gcxchange ticket - will delete shortly");
-               WriteCRLF(rs);
-               
-               // Product ID:
-               WriteBoundaryBytes(rs, boundary, false);
-               WriteContentDispositionFormDataHeader(rs, "product_id");
-               WriteString(rs, productID);
+               WriteString(rs, reasonOne);
                WriteCRLF(rs);
 
                // Status:
