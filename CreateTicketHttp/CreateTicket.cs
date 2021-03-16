@@ -13,8 +13,31 @@ using Microsoft.Azure.WebJobs.Host;
 
 namespace CreateTicketHttp
 {
+    public interface ITicketWrapper
+    {
+        Task<object> createTicket( String email );
+    }
+
+    public class TicketClientMock : ITicketWrapper
+    {
+        private readonly String _result;
+
+        public TicketClientMock(String result)
+        {
+            _result = result;
+        }
+
+        public async Task<object> createTicket(String email)
+        {
+            var mockResult = Task<object>.Run(() => { return _result; });
+            return await mockResult;
+        }
+    }
+
     public static class CreateTicket
     {
+        public static ITicketWrapper _ticketClientWrapper;
+
         private static void WriteCRLF(Stream o)
         {
             byte[] crLf = Encoding.ASCII.GetBytes("\r\n");
@@ -159,9 +182,9 @@ namespace CreateTicketHttp
             // return BadRequest if not present
             if (email != null)
             {
-                var result = CreateTicketAPI(log, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
+                var result = CreateTicketAPI(_ticketClientWrapper, log, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
 
-                if (result.Result == null)
+                if (result.Result != null)
                 {
                     return req.CreateResponse(HttpStatusCode.OK, "Finished");
                 } else
@@ -174,9 +197,14 @@ namespace CreateTicketHttp
             }
         }
 
-        public static Task<object> CreateTicketAPI(TraceWriter log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate,
+        public static Task<object> CreateTicketAPI(ITicketWrapper _ticketClientWrapper, TraceWriter log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate,
             string endDate, string sendReportTo, string isOngoing, Dictionary<string, string> attachmentName, Dictionary<string, string> attachmentType, Dictionary<string, byte[]> attachmentData)
         {
+            if(_ticketClientWrapper != null)
+            {
+                return _ticketClientWrapper.createTicket(UserEmail);
+            }
+
             // Load secret information
             string fdDomain = ConfigurationManager.AppSettings["DOMAIN"];
             string APIKey = ConfigurationManager.AppSettings["API_KEY"];
@@ -201,9 +229,9 @@ namespace CreateTicketHttp
             string login = APIKey + ":X"; // It could be your username:password also.
             string credentials = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(login));
             wr.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
-            
-           // Body:
-           using (var rs = wr.GetRequestStream())
+
+            // Body:
+            using (var rs = wr.GetRequestStream())
            {
                // Email:
                WriteBoundaryBytes(rs, boundary, false);
@@ -331,6 +359,7 @@ namespace CreateTicketHttp
                     Console.WriteLine("Location: {0}", response.Headers["Location"]);
                     //return the response 
                     Console.Out.WriteLine(Response);
+                    return Task.FromResult<object>(Response);
                 }
                 catch (WebException ex)
                 {
@@ -342,16 +371,16 @@ namespace CreateTicketHttp
                     {
                         Console.Write("Error Response: ");
                         Console.WriteLine(reader.ReadToEnd());
+                        return Task.FromResult<object>(null);
                     }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("ERROR");
                     Console.WriteLine(ex.Message);
+                    return Task.FromResult<object>(null);
                 }
             }
-
-            return Task.FromResult<object>(null);
            
         }
     }
