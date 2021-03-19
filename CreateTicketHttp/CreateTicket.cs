@@ -275,7 +275,7 @@ namespace CreateTicketHttp
 
                 
                // Reason 2
-               if(reasonTwo != null)
+               if(reasonTwo != null && reasonTwo != "")
                 {
                     WriteBoundaryBytes(rs, boundary, false);
                     WriteContentDispositionFormDataHeader(rs, "custom_fields[cf_reason_2]");
@@ -320,7 +320,7 @@ namespace CreateTicketHttp
                 }
                 
                 // Ongoing request
-                if(isOngoing != "false")
+                if(isOngoing != "false" && isOngoing != "")
                 {
                     WriteBoundaryBytes(rs, boundary, false);
                     WriteContentDispositionFormDataHeader(rs, "custom_fields[cf_ongoing]");
