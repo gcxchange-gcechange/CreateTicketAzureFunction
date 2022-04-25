@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Configuration;
+
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace CreateTicketHttp
 {
@@ -84,7 +86,7 @@ namespace CreateTicketHttp
         }
 
         [FunctionName("CreateTicket")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
+        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
         {
             log.Info("C# HTTP trigger function processed a request.");
 
@@ -186,14 +188,14 @@ namespace CreateTicketHttp
 
                 if (result.Result != null)
                 {
-                    return req.CreateResponse(HttpStatusCode.OK, "Finished");
+                    return new OkObjectResult(new { message = "Finished" });
                 } else
                 {
-                    return req.CreateResponse(HttpStatusCode.BadRequest, "E1BadRequest");
+                    return new BadRequestObjectResult(new { message = "E1BadRequest" });
                 }
             } else
             {
-                return req.CreateResponse(HttpStatusCode.BadRequest, "E0NoUserEmail");
+                return new BadRequestObjectResult(new { message = "E0NoUserEmail" });
             }
         }
 
@@ -206,8 +208,13 @@ namespace CreateTicketHttp
             }
 
             // Load secret information
-            string fdDomain = ConfigurationManager.AppSettings["DOMAIN"];
-            string APIKey = ConfigurationManager.AppSettings["API_KEY"];
+            IConfiguration config = new ConfigurationBuilder()
+
+             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+             .AddEnvironmentVariables()
+             .Build();
+            string fdDomain = config["DOMAIN"];
+            string APIKey = config["API_KEY"];
 
             string path = "/api/v2/tickets";
             string url = "https://" + fdDomain + ".freshdesk.com" + path;
