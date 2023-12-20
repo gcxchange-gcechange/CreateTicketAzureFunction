@@ -10,6 +10,11 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using static System.Net.WebRequestMethods;
+using System.Net.Http.Headers;
 
 namespace CreateTicketHttp
 {
@@ -84,9 +89,9 @@ namespace CreateTicketHttp
         }
 
         [FunctionName("CreateTicket")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
+        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, ILogger log)
         {
-            log.Info("C# HTTP trigger function processed a request.");
+            log.LogInformation("C# HTTP trigger function processed a request.");
 
             string email = null;
             string ticketDescription = null;
@@ -178,6 +183,8 @@ namespace CreateTicketHttp
                 }
             }
 
+            HttpResponseMessage response;
+
             // Check if email is passed
             // return BadRequest if not present
             if (email != null)
@@ -186,18 +193,23 @@ namespace CreateTicketHttp
 
                 if (result.Result != null)
                 {
-                    return req.CreateResponse(HttpStatusCode.OK, "Finished");
+                    response = new HttpResponseMessage(HttpStatusCode.OK);
+                    response.ReasonPhrase = "Finished";
                 } else
                 {
-                    return req.CreateResponse(HttpStatusCode.BadRequest, "E1BadRequest");
+                    response = new HttpResponseMessage(HttpStatusCode.BadRequest);
+                    response.ReasonPhrase = "E1BadRequest";
                 }
             } else
             {
-                return req.CreateResponse(HttpStatusCode.BadRequest, "E0NoUserEmail");
+                response = new HttpResponseMessage(HttpStatusCode.BadRequest);
+                response.ReasonPhrase = "E0NoUserEmail";
             }
+
+            return response;
         }
 
-        public static Task<object> CreateTicketAPI(ITicketWrapper _ticketClientWrapper, TraceWriter log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate,
+        public static async Task<object> CreateTicketAPI(ITicketWrapper _ticketClientWrapper, ILogger log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate,
             string endDate, string sendReportTo, string isOngoing, Dictionary<string, string> attachmentName, Dictionary<string, string> attachmentType, Dictionary<string, byte[]> attachmentData)
         {
             if(_ticketClientWrapper != null)
@@ -206,8 +218,9 @@ namespace CreateTicketHttp
             }
 
             // Load secret information
-            string fdDomain = ConfigurationManager.AppSettings["DOMAIN"];
-            string APIKey = ConfigurationManager.AppSettings["API_KEY"];
+            IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true, reloadOnChange: true).AddEnvironmentVariables().Build();
+            string fdDomain = config["DOMAIN"];
+            string APIKey = config["API_KEY"];
 
             string path = "/api/v2/tickets";
             string url = "https://" + fdDomain + ".freshdesk.com" + path;
@@ -215,24 +228,49 @@ namespace CreateTicketHttp
             // Define boundary:
             string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
 
-            // Web Request:
-            HttpWebRequest wr = (HttpWebRequest)WebRequest.Create(url);
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            wr.Headers.Clear();
+            HttpClient sharedClient = new()
+            {
+                BaseAddress = new Uri(url)
+            };
+            sharedClient.DefaultRequestHeaders.ConnectionClose = false; // Keep-Alive
+
+            // Web Request:
+            HttpRequestMessage request = new();
+            request.Headers.Clear();
 
             // Method and headers:
-            wr.ContentType = "multipart/form-data; boundary=" + boundary;
-            wr.Method = "POST";
-            wr.KeepAlive = true;
+            request.Content = new StringContent("?", Encoding.UTF8, "multipart/form-data; boundary=" + boundary);
+            request.Method = HttpMethod.Post;
+
 
             // Basic auth:
             string login = APIKey + ":X"; // It could be your username:password also.
-            string credentials = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(login));
-            wr.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
+            string credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes(login));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", "credentials");
+
+             HttpResponseMessage responseFromFreshDesk = await sharedClient.SendAsync(request);
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            //// Web Request:
+            //HttpWebRequest wr = (HttpWebRequest)WebRequest.Create(url);
+            //wr.Headers.Clear();
+
+            //// Method and headers:
+            //wr.ContentType = "multipart/form-data; boundary=" + boundary;
+            //wr.Method = "POST";
+            //wr.KeepAlive = true;
+
+            //// Basic auth:
+            ////string login = APIKey + ":X"; // It could be your username:password also.
+            ////string credentials = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(login));
+            //wr.Headers[HttpRequestHeader.Authorization] = "Basic " + credentials;
 
             // Body:
-            using (var rs = wr.GetRequestStream())
-           {
+            using (var rs = responseFromFreshDesk.Content.ReadAsStream())  // var rs = wr.GetRequestStream()
+            {
                // Email:
                WriteBoundaryBytes(rs, boundary, false);
                WriteContentDispositionFormDataHeader(rs, "email");
@@ -350,13 +388,28 @@ namespace CreateTicketHttp
                 try
                 {
                     Console.WriteLine("Submitting Request");
-                    var response = (HttpWebResponse)wr.GetResponse();
-                    Stream resStream = response.GetResponseStream();
+
+                    //var response = (HttpWebResponse)wr.GetResponse();
+                    var response = responseFromFreshDesk;
+
+
+
+
+                    //responseFromFreshDesk.Content.ReadAsStream()
+                    //Stream resStream = response.GetResponseStream();
+                    Stream resStream = response.Content.ReadAsStream();
+
+                    
+
                     string Response = new StreamReader(resStream, Encoding.ASCII).ReadToEnd();
                     //return status code
-                    Console.WriteLine("Status Code: {1} {0}", ((HttpWebResponse)response).StatusCode, (int)((HttpWebResponse)response).StatusCode);
+                    //Console.WriteLine("Status Code: {1} {0}", ((HttpWebResponse)response).StatusCode, (int)((HttpWebResponse)response).StatusCode);
+                    Console.WriteLine("Status Code: {1} {0}", (response).StatusCode, (int)(response).StatusCode);
+
                     //return location header
-                    Console.WriteLine("Location: {0}", response.Headers["Location"]);
+                    //Console.WriteLine("Location: {0}", response.Headers["Location"]);
+                    Console.WriteLine("Location: {0}", response.Headers.Location);
+
                     //return the response 
                     Console.Out.WriteLine(Response);
                     return Task.FromResult<object>(Response);
@@ -381,7 +434,6 @@ namespace CreateTicketHttp
                     return Task.FromResult<object>(null);
                 }
             }
-           
         }
     }
 }
