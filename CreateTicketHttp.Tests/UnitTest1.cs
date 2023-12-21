@@ -1,10 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System;
-using System.Text;
 using System.Net.Http;
-using System.Web.Http;
-using Microsoft.Azure.WebJobs.Host;
 
 namespace CreateTicketHttp.Tests
 {

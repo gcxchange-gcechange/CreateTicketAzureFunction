@@ -1,10 +1,35 @@
 # CreateTicketAzureFunction
 
-## Azure function to create a ticket in a freshdesk instance 
+## Summary
 
-### Description
+Azure function to create a ticket in a freshdesk instance
+- This application create ticket in a freshdesk instance using the API.
 
-This application create ticket in a freshdesk instance using the API.
+## Prerequisites
+
+## Version 
+
+![dotnet 6](https://img.shields.io/badge/net6.0-blue.svg)
+
+## API permission
+
+MSGraph
+
+| API / Permissions name    | Type        | Admin consent | Justification                       |
+| ------------------------- | ----------- | ------------- | ----------------------------------- |
+
+
+Sharepoint
+
+| API / Permissions name    | Type      | Admin consent | Justification                       |
+| ------------------------- | --------- | ------------- | ----------------------------------- |
+
+## App setting
+
+| Name                    	| Description                                                                   					         |
+| -------------------------	| ------------------------------------------------------------------------------------------------ |
+| DOMAIN | Freshdesk domain name|
+| API_KEY | Freshdesk API key |
 
 The data you need for the project are:
 
@@ -21,31 +46,11 @@ The data you need for the project are:
 |isOngoing|string
 |attachment|files
 
-### Installation of the project with Visual Studio
+## Version history
 
-* Clone this repo
+Version|Date|Comments
+-------|----|--------
 
-***
-## Azure Function pour la création de billet dans l'application Freshdesk
+## Disclaimer
 
-### Description
-Cette application permet de créer des billets dans freshdesk en utilisant l'API.
-
-Les données nécessaire au projets sont:
-|Paramètre|Type|
-|---|---|
-|email|chaîne de caractères|
-|reasonOneVal|chaîne de caractères|
-|ticketDescription|chaîne de caractères|
-|reasonTwoVal|chaîne de caractères
-|pageURL|chaîne de caractères
-|startDate|chaîne de caractères
-|endDate|chaîne de caractères
-|emailTo|chaîne de caractères
-|isOngoing|chaîne de caractères
-|attachment|fichiers
-
-### Installer le project dans Visual Studio
-
-* Clone le projet source de Github
-
+**THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.**

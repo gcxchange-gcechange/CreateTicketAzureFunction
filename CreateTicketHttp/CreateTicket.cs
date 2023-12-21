@@ -1,19 +1,14 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Configuration;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using static System.Net.WebRequestMethods;
 using System.Net.Http.Headers;
 
 namespace CreateTicketHttp
