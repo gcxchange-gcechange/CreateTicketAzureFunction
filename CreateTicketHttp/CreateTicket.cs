@@ -85,10 +85,16 @@ namespace CreateTicketHttp
                     formItem.data = await contentPart.ReadAsByteArrayAsync();
                     formItem.fileName = String.IsNullOrEmpty(contentDisposition.FileName) ? "" : contentDisposition.FileName.Trim('"');
                     formItem.mediaType = contentPart.Headers.ContentType == null ? "" : String.IsNullOrEmpty(contentPart.Headers.ContentType.MediaType) ? "" : contentPart.Headers.ContentType.MediaType;
-                    if (formItem.name == "attachment")
+                    
+                    if ((formItem.name == "attachment") && formItem.isAFileUpload)
                     {
                         attachments.Add(String.Concat(formItem.name, fileCount.ToString()), formItem);
                         fileCount++;
+
+                        log.LogInformation($"attachment formItem.name: {formItem.fileName}");
+                        log.LogInformation($"attachment formItem.isAFileUpload: {formItem.isAFileUpload}");
+                        log.LogInformation($"attachment formItem.mediaType: {formItem.mediaType}");
+                        log.LogInformation($"attachment formItem.data.Length: {formItem.data.Length}");
                     }
                     else
                     {
@@ -149,7 +155,6 @@ namespace CreateTicketHttp
                     }
                 }
 
-
                 if (email != null)
                 {
                     var result = CreateTicketAPI(_ticketClientWrapper, log, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
@@ -208,28 +213,59 @@ namespace CreateTicketHttp
             request.Method = HttpMethod.Post;
             request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
+            log.LogInformation($"UserEmail : {UserEmail}");
+            log.LogInformation($"reasonOne : {reasonOne}");
+            log.LogInformation($"description : {description}");
+            log.LogInformation($"reasonTwo : {reasonTwo}");
+            log.LogInformation($"pageUrl : {pageUrl}");
+            log.LogInformation($"startDate : {startDate}");
+            log.LogInformation($"endDate : {endDate}");
+            log.LogInformation($"sendReportTo : {sendReportTo}");
+            log.LogInformation($"isOngoing : {isOngoing}");
+
             var content = new MultipartFormDataContent
             {
                 { new StringContent(UserEmail), "\"email\"" },
                 { new StringContent(reasonOne), "\"subject\"" },
                 { new StringContent("2"), "\"status\"" },
                 { new StringContent("1"), "\"priority\"" },
-                { new StringContent(description), "\"description\"" },            // if not null ?
-                { new StringContent(reasonOne), "\"custom_fields[cf_reason]\"" },
-                { new StringContent(reasonTwo), "\"custom_fields[cf_reason_2]\"" },
-                { new StringContent(pageUrl), "\"custom_fields[cf_page_url]\"" },
-                { new StringContent(startDate), "\"custom_fields[cf_start_date]\"" },
-                { new StringContent(endDate), "\"custom_fields[cf_end_date]\"" },
-                { new StringContent(sendReportTo), "\"custom_fields[cf_send_report_to]\"" },
-                { new StringContent(isOngoing), "\"custom_fields[cf_ongoing]\"" }
+                { new StringContent(reasonOne), "\"custom_fields[cf_reason]\"" }
 ,            };
 
+            if (description != null) {
+                content.Add(new StringContent(description), "\"description\"");
+            }
+
+            if (reasonTwo != null && reasonTwo != "") {
+                content.Add(new StringContent(reasonTwo), "\"custom_fields[cf_reason_2]\"");
+            }
+
+            if (pageUrl != null) {
+                content.Add(new StringContent(pageUrl), "\"custom_fields[cf_page_url]\"");
+            }
+
+            if (startDate != null) {
+                content.Add(new StringContent(startDate), "\"custom_fields[cf_start_date]\"");
+            }
+
+            if (endDate != null) {
+                content.Add(new StringContent(endDate), "\"custom_fields[cf_end_date]\"");
+            }
+
+            if (sendReportTo != null) {
+                content.Add(new StringContent(sendReportTo), "\"custom_fields[cf_send_report_to]\"");
+            }
+
+            if (isOngoing != "false" && isOngoing != "") {
+                content.Add(new StringContent(isOngoing), "\"custom_fields[cf_ongoing]\"");
+            }
+           
             if (attachmentData.Count > 0)
             {
-                log.LogInformation("Attaching files...");
+                log.LogInformation("Attaching file(s)...");
                 foreach (KeyValuePair<string, byte[]> files in attachmentData)
                 {
-                    content.Add(new StreamContent(new MemoryStream(files.Value)), attachmentType[files.Key], attachmentName[files.Key]);
+                    content.Add(new ByteArrayContent(files.Value, 0, files.Value.Length), "attachments[]", attachmentName[files.Key]);
                 }
             } else
             {
@@ -240,9 +276,16 @@ namespace CreateTicketHttp
 
             try
             {
-                log.LogInformation("Submitting Request");
-                var response = await sharedClient.PostAsync(url, content);
-                log.LogInformation($"StatusCode: {response.StatusCode}");
+                log.LogInformation("Sending request...");
+
+                var response = await sharedClient.SendAsync(request);
+
+                log.LogInformation($"response.StatusCode: {response.StatusCode}");
+
+                var responseContent = response.Content.ReadAsStringAsync();
+
+                log.LogInformation($"responseContent.Result: {responseContent.Result}");
+
                 return Task.FromResult<object>(response);
             }
             catch (WebException ex)
