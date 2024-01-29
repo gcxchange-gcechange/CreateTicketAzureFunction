@@ -1,10 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System;
-using System.Text;
 using System.Net.Http;
-using System.Web.Http;
-using Microsoft.Azure.WebJobs.Host;
 
 namespace CreateTicketHttp.Tests
 {
@@ -12,6 +9,7 @@ namespace CreateTicketHttp.Tests
     public class UnitTest1 : TestHelpers.FunctionTest
     {
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Ticket_Without_UserEmail()
         {
             // Create HttpRequestMessage
@@ -21,14 +19,15 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I have no email"), "ticket");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"E0NoUserEmail\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Ticket_With_Email()
         {
             // Create HttpRequestMessage
@@ -38,15 +37,16 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("first.last@test.gc.ca"), "email");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock("Ticket Submitted");
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"Finished\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Issue_Ticket()
         {
             // Create HttpRequestMessage
@@ -59,15 +59,16 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I am having an issue."), "ticketDescription");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock("Ticket Submitted");
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"Finished\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Assistance_Ticket()
         {
             // Create HttpRequestMessage
@@ -80,15 +81,16 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I am having assistance."), "ticketDescription");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock("Ticket Submitted");
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"Finished\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Data_Ticket()
         {
             // Create HttpRequestMessage
@@ -104,15 +106,16 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I would like some data."), "ticketDescription");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock("Ticket Submitted");
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"Finished\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Submit_Other_Ticket()
         {
             // Create HttpRequestMessage
@@ -125,15 +128,16 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I have something I don't know.."), "ticketDescription");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock("Ticket Submitted");
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"Finished\"", result.Content.ReadAsStringAsync().Result);
         }
 
         [TestMethod]
+        [Obsolete]
         public async Task Request_Query_With_RandomError()
         {
             // Create HttpRequestMessage
@@ -146,11 +150,11 @@ namespace CreateTicketHttp.Tests
             data.Add(new StringContent("I have something I don't know.."), "ticketDescription");
             request.Content = data;
 
-            var httpConfig = new HttpConfiguration();
-            request.SetConfiguration(httpConfig);
+            //var httpConfig = new HttpConfiguration();
+            //request.SetConfiguration(httpConfig);
 
             CreateTicket._ticketClientWrapper = new TicketClientMock(null);
-            var result = await CreateTicket.Run(req: request, log: log);
+            var result = await CreateTicket.Run(req: request, log: (Microsoft.Extensions.Logging.ILogger)log);
             Assert.AreEqual("\"E1BadRequest\"", result.Content.ReadAsStringAsync().Result);
         }
     }

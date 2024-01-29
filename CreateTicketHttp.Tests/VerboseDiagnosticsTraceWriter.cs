@@ -3,6 +3,7 @@ using System.Diagnostics;
 
 namespace FunctionTestHelper
 {
+    [System.Obsolete]
     public class VerboseDiagnosticsTraceWriter : TraceWriter
     {
 

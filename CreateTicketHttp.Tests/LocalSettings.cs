@@ -13,7 +13,7 @@ namespace CreateTicketHttp.Tests
         public Dictionary<string, string> Values { get; set; }
 
 
-        public static async Task SetupEnvironment()
+        public static void SetupEnvironment()
         {
             Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 
@@ -34,8 +34,9 @@ namespace CreateTicketHttp.Tests
             catch (Exception e)
             {
                 // no local.settings.json file
+                Console.WriteLine(e.ToString());
             }
-                
+
         }
     }
 }
