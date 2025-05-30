@@ -10,6 +10,8 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CreateTicketHttp
 {
@@ -34,7 +36,21 @@ namespace CreateTicketHttp
         }
     }
 
-    public static class CreateTicket
+    public class ResponseValues
+    {
+        public string StatusCode { get; set; }
+    }
+
+    public class WebResponse
+    {
+        public ResponseValues Result;
+
+        public WebResponse() {
+            Result=new ResponseValues();
+        }
+    }
+
+        public static class CreateTicket 
     {
         public static ITicketWrapper _ticketClientWrapper;
 
@@ -159,7 +175,7 @@ namespace CreateTicketHttp
                 {
                     var result = CreateTicketAPI(_ticketClientWrapper, log, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
 
-                    if (result.Result != null)
+                    if (result.Result != null && (result.Result.StatusCode == HttpStatusCode.OK || result.Result.StatusCode == HttpStatusCode.Created))
                     {
                         response = new HttpResponseMessage(HttpStatusCode.OK);
                         response.ReasonPhrase = "Finished";
@@ -186,12 +202,12 @@ namespace CreateTicketHttp
             return response;
         }
 
-        public static async Task<object> CreateTicketAPI(ITicketWrapper _ticketClientWrapper, ILogger log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate, string endDate, string sendReportTo, string isOngoing, Dictionary<string, string> attachmentName, Dictionary<string, string> attachmentType, Dictionary<string, byte[]> attachmentData)
+        public static async Task<HttpResponseMessage> CreateTicketAPI(ITicketWrapper _ticketClientWrapper, ILogger log, string UserEmail, string reasonOne, string reasonTwo, string description, string pageUrl, string startDate, string endDate, string sendReportTo, string isOngoing, Dictionary<string, string> attachmentName, Dictionary<string, string> attachmentType, Dictionary<string, byte[]> attachmentData)
         {
-            if (_ticketClientWrapper != null)
-            {
-                return _ticketClientWrapper.createTicket(UserEmail);
-            }
+            //if (_ticketClientWrapper != null)
+            //{
+            //    return _ticketClientWrapper.createTicket(UserEmail);
+            //}
 
             IConfiguration config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true, reloadOnChange: true).AddEnvironmentVariables().Build();
 
@@ -286,7 +302,12 @@ namespace CreateTicketHttp
 
                 log.LogInformation($"responseContent.Result: {responseContent.Result}");
 
-                return Task.FromResult<object>(response);
+
+
+
+
+                //return Task.FromResult<object>(response);
+                return response;
             }
             catch (WebException ex)
             {
@@ -299,7 +320,8 @@ namespace CreateTicketHttp
                 {
                     log.LogInformation("Error Response: ");
                     log.LogInformation(reader.ReadToEnd());
-                    return Task.FromResult<object>(null);
+                    //return Task.FromResult<object>(null);
+                    return null;
                 }
             }
             catch (Exception ex)
@@ -307,7 +329,8 @@ namespace CreateTicketHttp
                 log.LogInformation("ERROR");
                 log.LogInformation(ex.Message);
                 log.LogInformation(ex.StackTrace);
-                return Task.FromResult<object>(null);
+                //return Task.FromResult<object>(null);
+                return null;
             }
         }
     }
