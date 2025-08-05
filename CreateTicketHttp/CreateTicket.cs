@@ -1,17 +1,11 @@
-using System;
-using System.Net;
-using System.Net.Http;
-using System.IO;
-using System.Text;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Net.Http.Headers;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using System.Text;
 
 namespace CreateTicketHttp
 {
@@ -45,13 +39,21 @@ namespace CreateTicketHttp
     {
         public ResponseValues Result;
 
-        public WebResponse() {
-            Result=new ResponseValues();
+        public WebResponse()
+        {
+            Result = new ResponseValues();
         }
     }
 
-        public static class CreateTicket 
+    public class CreateTicket
     {
+        private readonly ILogger<CreateTicket> _logger;
+
+        public CreateTicket(ILogger<CreateTicket> logger)
+        {
+            _logger = logger;
+        }
+
         public static ITicketWrapper _ticketClientWrapper;
 
         private class FormItem
@@ -65,10 +67,10 @@ namespace CreateTicketHttp
             public bool isAFileUpload { get { return !String.IsNullOrEmpty(fileName); } }
         }
 
-        [FunctionName("CreateTicket")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequestMessage req, ILogger log)
+        [Function("CreateTicket")]
+        public async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             HttpResponseMessage response = new();
 
@@ -84,38 +86,58 @@ namespace CreateTicketHttp
                 string emailTo = null;
                 string isOngoing = "false";
 
-                var provider = new MultipartMemoryStreamProvider();
-                await req.Content.ReadAsMultipartAsync(provider);
-
                 var formItems = new Dictionary<string, FormItem>();
                 var attachments = new Dictionary<string, FormItem>();
-
                 int fileCount = 0;
 
-                // Scan the Multiple Parts 
-                foreach (HttpContent contentPart in provider.Contents)
+                var boundary = MultipartRequestHelper.GetBoundary(Microsoft.Net.Http.Headers.MediaTypeHeaderValue.Parse(req.ContentType), 100);
+                var reader = new MultipartReader(boundary, req.Body);
+                var section = await reader.ReadNextSectionAsync();
+
+                // Scan the Multiple Parts aka sections
+                while (section != null)
                 {
-                    var formItem = new FormItem();
-                    var contentDisposition = contentPart.Headers.ContentDisposition;
-                    formItem.name = contentDisposition.Name.Trim('"');
-                    formItem.data = await contentPart.ReadAsByteArrayAsync();
-                    formItem.fileName = String.IsNullOrEmpty(contentDisposition.FileName) ? "" : contentDisposition.FileName.Trim('"');
-                    formItem.mediaType = contentPart.Headers.ContentType == null ? "" : String.IsNullOrEmpty(contentPart.Headers.ContentType.MediaType) ? "" : contentPart.Headers.ContentType.MediaType;
+                    string fileName;
+                    FormItem formItem = new FormItem();
+                    MemoryStream ms = new MemoryStream();
+                    string sectionName;
+
+                    await section.Body.CopyToAsync(ms);
+
+                    if (section.AsFileSection() != null) {
+                        fileName = section.AsFileSection().FileName;
+                        sectionName = section.AsFileSection().Name;
+                    } else if (section.AsFormDataSection() != null) {
+                        fileName = "";
+                        sectionName = section.AsFormDataSection().Name;
+                    } else {
+                        fileName = "";
+                        sectionName = "";
+                    }
+
+                    formItem.name = sectionName.Trim('"');
+                    formItem.data = ms.ToArray();
+                    formItem.fileName = fileName.Trim('"');
+
+                    //todo - not sure how to get the mediaType, not sure it's necessary
+                    //formItem.mediaType = fileSection.Section.ContentType == null ? "" : String.IsNullOrEmpty(contentPart.Headers.ContentType.MediaType) ? "" : contentPart.Headers.ContentType.MediaType;
                     
                     if ((formItem.name == "attachment") && formItem.isAFileUpload)
                     {
                         attachments.Add(String.Concat(formItem.name, fileCount.ToString()), formItem);
                         fileCount++;
 
-                        log.LogInformation($"attachment formItem.name: {formItem.fileName}");
-                        log.LogInformation($"attachment formItem.isAFileUpload: {formItem.isAFileUpload}");
-                        log.LogInformation($"attachment formItem.mediaType: {formItem.mediaType}");
-                        log.LogInformation($"attachment formItem.data.Length: {formItem.data.Length}");
+                        _logger.LogInformation($"attachment formItem.name: {formItem.fileName}");
+                        _logger.LogInformation($"attachment formItem.isAFileUpload: {formItem.isAFileUpload}");
+                        _logger.LogInformation($"attachment formItem.mediaType: {formItem.mediaType}");
+                        _logger.LogInformation($"attachment formItem.data.Length: {formItem.data.Length}");
                     }
                     else
                     {
                         formItems.Add(formItem.name, formItem);
                     }
+
+                    section = await reader.ReadNextSectionAsync();
                 }
 
                 // See what fields have been passed to function
@@ -173,7 +195,7 @@ namespace CreateTicketHttp
 
                 if (email != null)
                 {
-                    var result = CreateTicketAPI(_ticketClientWrapper, log, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
+                    var result = CreateTicketAPI(_ticketClientWrapper, _logger, email, reasonOneVal, reasonTwoVal, ticketDescription, pageURL, startDate, endDate, emailTo, isOngoing, attachmentName, attachmentType, attachmentData);
 
                     if (result.Result != null && (result.Result.StatusCode == HttpStatusCode.OK || result.Result.StatusCode == HttpStatusCode.Created))
                     {
@@ -194,9 +216,9 @@ namespace CreateTicketHttp
             }
             catch (Exception e)
             {
-                log.LogError($"Message: {e.Message}");
-                if (e.InnerException is not null) log.LogError($"InnerException: {e.InnerException.Message}");
-                log.LogError($"StackTrace: {e.StackTrace}");
+                _logger.LogError($"Message: {e.Message}");
+                if (e.InnerException is not null) _logger.LogError($"InnerException: {e.InnerException.Message}");
+                _logger.LogError($"StackTrace: {e.StackTrace}");
             }
 
             return response;
@@ -248,34 +270,41 @@ namespace CreateTicketHttp
                 { new StringContent(reasonOne), "\"custom_fields[cf_reason]\"" }
 ,            };
 
-            if (description != null) {
+            if (description != null)
+            {
                 content.Add(new StringContent(description), "\"description\"");
             }
 
-            if (reasonTwo != null && reasonTwo != "") {
+            if (reasonTwo != null && reasonTwo != "")
+            {
                 content.Add(new StringContent(reasonTwo), "\"custom_fields[cf_reason_2]\"");
             }
 
-            if (pageUrl != null) {
+            if (pageUrl != null)
+            {
                 content.Add(new StringContent(pageUrl), "\"custom_fields[cf_page_url]\"");
             }
 
-            if (startDate != null) {
+            if (startDate != null)
+            {
                 content.Add(new StringContent(startDate), "\"custom_fields[cf_start_date]\"");
             }
 
-            if (endDate != null) {
+            if (endDate != null)
+            {
                 content.Add(new StringContent(endDate), "\"custom_fields[cf_end_date]\"");
             }
 
-            if (sendReportTo != null) {
+            if (sendReportTo != null)
+            {
                 content.Add(new StringContent(sendReportTo), "\"custom_fields[cf_send_report_to]\"");
             }
 
-            if (isOngoing != "false" && isOngoing != "") {
+            if (isOngoing != "false" && isOngoing != "")
+            {
                 content.Add(new StringContent(isOngoing), "\"custom_fields[cf_ongoing]\"");
             }
-           
+
             if (attachmentData.Count > 0)
             {
                 log.LogInformation("Attaching file(s)...");
@@ -283,7 +312,8 @@ namespace CreateTicketHttp
                 {
                     content.Add(new ByteArrayContent(files.Value, 0, files.Value.Length), "attachments[]", attachmentName[files.Key]);
                 }
-            } else
+            }
+            else
             {
                 log.LogInformation("No files to attach");
             }
@@ -293,20 +323,11 @@ namespace CreateTicketHttp
             try
             {
                 log.LogInformation("Sending request...");
-
                 var response = await sharedClient.SendAsync(request);
-
                 log.LogInformation($"response.StatusCode: {response.StatusCode}");
-
                 var responseContent = response.Content.ReadAsStringAsync();
-
                 log.LogInformation($"responseContent.Result: {responseContent.Result}");
 
-
-
-
-
-                //return Task.FromResult<object>(response);
                 return response;
             }
             catch (WebException ex)
@@ -320,7 +341,6 @@ namespace CreateTicketHttp
                 {
                     log.LogInformation("Error Response: ");
                     log.LogInformation(reader.ReadToEnd());
-                    //return Task.FromResult<object>(null);
                     return null;
                 }
             }
@@ -329,7 +349,6 @@ namespace CreateTicketHttp
                 log.LogInformation("ERROR");
                 log.LogInformation(ex.Message);
                 log.LogInformation(ex.StackTrace);
-                //return Task.FromResult<object>(null);
                 return null;
             }
         }

@@ -9,27 +9,26 @@ Azure function to create a ticket in a freshdesk instance
 
 ## Version 
 
-![dotnet 6](https://img.shields.io/badge/net6.0-blue.svg)
+![dotnet 8](https://img.shields.io/badge/net8.0-blue.svg)
 
 ## API permission
 
 MSGraph
 
-| API / Permissions name    | Type        | Admin consent | Justification                       |
-| ------------------------- | ----------- | ------------- | ----------------------------------- |
-
+n/a
 
 Sharepoint
 
-| API / Permissions name    | Type      | Admin consent | Justification                       |
-| ------------------------- | --------- | ------------- | ----------------------------------- |
+n/a
 
 ## App setting
 
-| Name                    	| Description                                                                   					         |
+| Name                    	| Description                                                                   				   |
 | -------------------------	| ------------------------------------------------------------------------------------------------ |
-| DOMAIN | Freshdesk domain name|
-| API_KEY | Freshdesk API key |
+| AzureWebJobsStorage		| Connection string for the storage account														   |
+| fdDomain					| Freshdesk domain name                                                                            |
+| keyVaultUrl				| Address for the key vault                                                                        |
+| secretName				| Secret name used to authorize the function app                                                   |
 
 The data you need for the project are:
 
@@ -50,6 +49,7 @@ The data you need for the project are:
 
 Version|Date|Comments
 -------|----|--------
+Current|2025-07-24| .NET 8 upgrade
 
 ## Disclaimer
 
