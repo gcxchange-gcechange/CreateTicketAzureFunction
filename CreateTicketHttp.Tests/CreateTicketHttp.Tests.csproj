@@ -5,7 +5,7 @@
     <AssemblyName>UpdateUserHttp.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyTitle>UpdateUserHttp.Tests</AssemblyTitle>
     <Product>UpdateUserHttp.Tests</Product>
